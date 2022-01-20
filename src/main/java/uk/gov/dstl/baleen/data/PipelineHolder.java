@@ -1,5 +1,7 @@
 package uk.gov.dstl.baleen.data;
 
+import java.util.Collection;
+
 /*-
  * #%L
  * Baleen 3
@@ -21,16 +23,16 @@ package uk.gov.dstl.baleen.data;
  */
 
 import com.google.common.collect.EvictingQueue;
+
 import io.annot8.api.pipelines.PipelineDescriptor;
 import io.annot8.api.pipelines.PipelineRunner;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import uk.gov.dstl.baleen.logging.BaleenLogEntry;
 
-import java.util.Collection;
-
 /**
- * Internal class for holding a pipeline along with associated information about the pipeline,
+ * Internal class for holding a pipeline along with associated information about
+ * the pipeline,
  * e.g. it's configuration, logs and metrics.
  */
 public class PipelineHolder {
@@ -42,10 +44,11 @@ public class PipelineHolder {
   /**
    * Create a new instance with the specified descriptor and log entries.
    *
-   * During creation, a new {@link SimpleMeterRegistry} will be created, but this can be overridden by
+   * During creation, a new {@link SimpleMeterRegistry} will be created, but this
+   * can be overridden by
    * subsequently calling {@link #setMeterRegistry(MeterRegistry)} if required.
    */
-  public PipelineHolder(PipelineDescriptor descriptor, int maxLoggingEntries){
+  public PipelineHolder(PipelineDescriptor descriptor, int maxLoggingEntries) {
     this.descriptor = descriptor;
     this.logEntries = EvictingQueue.create(maxLoggingEntries);
     this.meterRegistry = new SimpleMeterRegistry();
@@ -54,6 +57,7 @@ public class PipelineHolder {
   public PipelineDescriptor getDescriptor() {
     return descriptor;
   }
+
   public void setDescriptor(PipelineDescriptor descriptor) {
     this.descriptor = descriptor;
   }
@@ -61,6 +65,7 @@ public class PipelineHolder {
   public Collection<BaleenLogEntry> getLogEntries() {
     return logEntries;
   }
+
   public void setLogEntries(Collection<BaleenLogEntry> logEntries) {
     this.logEntries = logEntries;
   }
@@ -81,7 +86,7 @@ public class PipelineHolder {
     this.pipelineRunner = pipelineRunner;
   }
 
-  public boolean isRunning(){
-    return pipelineRunner != null;
+  public boolean isRunning() {
+    return pipelineRunner != null && pipelineRunner.isRunning();
   }
 }
