@@ -29,14 +29,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
+import io.micrometer.core.lang.Nullable;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
 @Schema(name = "Annot8 Component Info", description = "Holds information about an Annot8 component")
 public class Annot8ComponentInfo {
-  private static final String VERSION_PATTERN = "-\\d+\\.\\d+\\.\\d+([-.](SNAPSHOT|FINAL|RELEASE))?([-.]shaded)?$";
+  private static final String VERSION_PATTERN =
+      "-\\d+\\.\\d+\\.\\d+([-.](SNAPSHOT|FINAL|RELEASE))?([-.]shaded)?$";
   private static final Logger LOGGER = LoggerFactory.getLogger(Annot8ComponentInfo.class);
 
   @Nullable
@@ -48,18 +49,22 @@ public class Annot8ComponentInfo {
   @Nullable
   @Schema(description = "Tags associated with this components", example = "geo,coordinates,mgrs")
   private Collection<String> tags;
-  @Schema(description = "The artifact that this component is located in", example = "annot8-components-geo")
+  @Schema(description = "The artifact that this component is located in",
+      example = "annot8-components-geo")
   private String artifact;
-  @Schema(description = "The component descriptor class", example = "io.annot8.components.geo.processors.Mgrs", required = true)
+  @Schema(description = "The component descriptor class",
+      example = "io.annot8.components.geo.processors.Mgrs", required = true)
   private String componentClass;
   @Nullable
-  @Schema(description = "The settings class", example = "io.annot8.components.geo.processors.MgrsSettings")
+  @Schema(description = "The settings class",
+      example = "io.annot8.components.geo.processors.MgrsSettings")
   private String settingsClass;
 
 
   public String getName() {
     return name;
   }
+
   public void setName(String name) {
     this.name = name;
   }
@@ -67,6 +72,7 @@ public class Annot8ComponentInfo {
   public String getDescription() {
     return description;
   }
+
   public void setDescription(String description) {
     this.description = description;
   }
@@ -74,6 +80,7 @@ public class Annot8ComponentInfo {
   public Collection<String> getTags() {
     return tags;
   }
+
   public void setTags(Collection<String> tags) {
     this.tags = tags;
   }
@@ -81,6 +88,7 @@ public class Annot8ComponentInfo {
   public String getArtifact() {
     return artifact;
   }
+
   public void setArtifact(String artifact) {
     this.artifact = artifact;
   }
@@ -88,6 +96,7 @@ public class Annot8ComponentInfo {
   public String getComponentClass() {
     return componentClass;
   }
+
   public void setComponentClass(String componentClass) {
     this.componentClass = componentClass;
   }
@@ -95,47 +104,44 @@ public class Annot8ComponentInfo {
   public String getSettingsClass() {
     return settingsClass;
   }
+
   public void setSettingsClass(String settingsClass) {
     this.settingsClass = settingsClass;
   }
 
-  public static Annot8ComponentInfo fromDescriptor(Class<? extends Annot8ComponentDescriptor> descriptor){
+  public static Annot8ComponentInfo fromDescriptor(
+      Class<? extends Annot8ComponentDescriptor> descriptor) {
     Annot8ComponentInfo info = new Annot8ComponentInfo();
 
     info.setComponentClass(descriptor.getName());
     try {
-      info.setArtifact(
-          filenameToComponent(
-              descriptor
-                  .getProtectionDomain()
-                  .getCodeSource()
-                  .getLocation()
-                  .getFile()));
-    }catch (Exception e){
+      info.setArtifact(filenameToComponent(
+          descriptor.getProtectionDomain().getCodeSource().getLocation().getFile()));
+    } catch (Exception e) {
       LOGGER.warn("Couldn't determine artifact for component {}", descriptor.getName(), e);
     }
 
     ComponentName name = descriptor.getAnnotation(ComponentName.class);
-    if(name != null){
+    if (name != null) {
       info.setName(name.value());
     }
 
     ComponentDescription desc = descriptor.getAnnotation(ComponentDescription.class);
-    if(desc != null){
+    if (desc != null) {
       info.setDescription(desc.value());
     }
 
     ComponentTags tags = descriptor.getAnnotation(ComponentTags.class);
-    if(tags != null){
+    if (tags != null) {
       info.setTags(List.of(tags.value()));
     }
 
     SettingsClass settings = descriptor.getAnnotation(SettingsClass.class);
-    if(settings != null){
+    if (settings != null) {
       info.setSettingsClass(settings.value().getName());
     }
 
-    //TODO: Capabilities (using default settings)?
+    // TODO: Capabilities (using default settings)?
 
     return info;
   }
@@ -146,7 +152,8 @@ public class Annot8ComponentInfo {
     if (filenameNorm.endsWith("!/"))
       filenameNorm = filenameNorm.substring(0, filenameNorm.length() - 2);
 
-    if (filenameNorm.startsWith("file:")) filenameNorm = filenameNorm.substring(5);
+    if (filenameNorm.startsWith("file:"))
+      filenameNorm = filenameNorm.substring(5);
 
     if (filenameNorm.toLowerCase().endsWith(".jar")) {
       File f = new File(filenameNorm);

@@ -22,27 +22,21 @@ package uk.gov.dstl.baleen.data;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.json.bind.annotation.JsonbTransient;
+import jakarta.json.bind.annotation.JsonbTransient;
 
-@Schema(
-        name = "Settings Schema",
+@Schema(name = "Settings Schema",
         description = "Holds information about a settings class, the JSON schema of the settings and the default values.")
 public class SettingsSchema {
 
-    @Schema(hidden=true)
+    @Schema(hidden = true)
     private final String name;
 
-    @Schema(description = "Name JSON Schema of the settings", example = "{\n" +
-        "  \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n" +
-        "  \"type\": \"object\",\n" +
-        "  \"properties\": {\n" +
-        "    \"ignoreDates\": {\n" +
-        "      \"type\": \"boolean\",\n" +
-        "      \"description\": \"Should MGRS co-ordinates that could also be valid dates be ignored\",\n" +
-        "      \"default\": false\n" +
-        "    }\n" +
-        "  }\n" +
-        "}")
+    @Schema(description = "Name JSON Schema of the settings", example = "{\n"
+            + "  \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
+            + "  \"type\": \"object\",\n" + "  \"properties\": {\n" + "    \"ignoreDates\": {\n"
+            + "      \"type\": \"boolean\",\n"
+            + "      \"description\": \"Should MGRS co-ordinates that could also be valid dates be ignored\",\n"
+            + "      \"default\": false\n" + "    }\n" + "  }\n" + "}")
     private final String jsonSchema;
 
     public SettingsSchema(String name, String jsonSchema) {

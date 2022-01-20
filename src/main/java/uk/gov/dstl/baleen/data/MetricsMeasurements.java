@@ -23,7 +23,7 @@ package uk.gov.dstl.baleen.data;
 import io.micrometer.core.instrument.Measurement;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.json.bind.annotation.JsonbTransient;
+import jakarta.json.bind.annotation.JsonbTransient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

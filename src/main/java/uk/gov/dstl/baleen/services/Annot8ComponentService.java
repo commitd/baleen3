@@ -40,11 +40,16 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 
 /**
- * Service for keeping track of Annot8 components and making them accessible to the relevant
- * Annot8 factories
+ * Service for keeping track of Annot8 components and making them accessible to the relevant Annot8
+ * factories
  */
 @Service
 public class Annot8ComponentService {
@@ -64,75 +69,66 @@ public class Annot8ComponentService {
   public void scan() {
     LOGGER.info("Performing scan for Annot8 components");
 
-    //Set to hold all the components so we can create a component registry later on
+    // Set to hold all the components so we can create a component registry later on
     Set<Class<? extends Annot8ComponentDescriptor>> components = new HashSet<>();
 
-    //Create a new content builder factory registry to populate
+    // Create a new content builder factory registry to populate
     contentBuilderFactoryRegistry = new SimpleContentBuilderFactoryRegistry();
 
-    //Create a new Orderers set to populate
+    // Create a new Orderers set to populate
     orderers = new HashSet<>();
 
     try (ScanResult scanResult = new ClassGraph().enableClassInfo().enableAnnotationInfo().scan()) {
       // Get components
-      scanResult
-          .getClassesImplementing(Annot8ComponentDescriptor.class.getName())
-          .filter(cif -> !cif.isAbstract())
-          .loadClasses()
+      scanResult.getClassesImplementing(Annot8ComponentDescriptor.class.getName())
+          .filter(cif -> !cif.isAbstract()).loadClasses()
           .forEach(c -> components.add((Class<? extends Annot8ComponentDescriptor>) c));
 
       // Get Pipeline Orderers
-      scanResult
-        .getClassesImplementing(PipelineOrderer.class.getName())
-        .filter((cif -> ! cif.isAbstract()))
-        .loadClasses()
-        .forEach(c -> orderers.add((Class<? extends PipelineOrderer>) c));
+      scanResult.getClassesImplementing(PipelineOrderer.class.getName())
+          .filter((cif -> !cif.isAbstract())).loadClasses()
+          .forEach(c -> orderers.add((Class<? extends PipelineOrderer>) c));
 
       // Get Content
       List<Class<? extends Content>> content = new ArrayList<>();
-      scanResult
-          .getClassesImplementing(Content.class.getName())
-          .filter(ClassInfo::isInterface)
-          .loadClasses()
-          .forEach(c -> content.add((Class<? extends Content>) c));
+      scanResult.getClassesImplementing(Content.class.getName()).filter(ClassInfo::isInterface)
+          .loadClasses().forEach(c -> content.add((Class<? extends Content>) c));
 
       // Get ContentBuilderFactories and register them against the relevant Content classes
-      scanResult
-          .getClassesImplementing(ContentBuilderFactory.class.getName())
-          .filter(cif -> !cif.isAbstract())
-          .loadClasses()
-          .forEach(
-              c -> {
-                ContentBuilderFactory cbf;
-                try {
-                  cbf = instantiateContentBuilderFactory((Class<? extends ContentBuilderFactory>) c);
-                } catch (Exception e) {
-                  LOGGER.warn("Unable to instantiate ContentBuilderFactory {}", c.getName(), e);
-                  return;
-                }
+      scanResult.getClassesImplementing(ContentBuilderFactory.class.getName())
+          .filter(cif -> !cif.isAbstract()).loadClasses().forEach(c -> {
+            ContentBuilderFactory cbf;
+            try {
+              cbf = instantiateContentBuilderFactory((Class<? extends ContentBuilderFactory>) c);
+            } catch (Exception e) {
+              LOGGER.warn("Unable to instantiate ContentBuilderFactory {}", c.getName(), e);
+              return;
+            }
 
-                for (Class<? extends Content> cc : content) {
-                  if (cc.isAssignableFrom(cbf.getContentClass())) {
-                    LOGGER.info("Registering {} as a factory for {}", c.getName(), cc.getName());
-                    contentBuilderFactoryRegistry.register(cc, cbf);
-                  }
-                }
-              });
+            for (Class<? extends Content> cc : content) {
+              if (cc.isAssignableFrom(cbf.getContentClass())) {
+                LOGGER.info("Registering {} as a factory for {}", c.getName(), cc.getName());
+                contentBuilderFactoryRegistry.register(cc, cbf);
+              }
+            }
+          });
     }
 
-    //Create ComponentRegistry with the components we found
+    // Create ComponentRegistry with the components we found
     registry = new Annot8ComponentRegistry(components);
   }
 
   /**
-   * Returns a {@link Annot8ComponentRegistry} populated with all the components currently on the classpath
+   * Returns a {@link Annot8ComponentRegistry} populated with all the components currently on the
+   * classpath
    */
   public Annot8ComponentRegistry getRegistry() {
     return registry;
   }
 
   /**
-   * Returns a {@link ContentBuilderFactoryRegistry} populated with all the factories currently on the classpath
+   * Returns a {@link ContentBuilderFactoryRegistry} populated with all the factories currently on
+   * the classpath
    */
   public ContentBuilderFactoryRegistry getContentBuilderFactoryRegistry() {
     return contentBuilderFactoryRegistry;
@@ -145,7 +141,8 @@ public class Annot8ComponentService {
     return orderers;
   }
 
-  private ContentBuilderFactory instantiateContentBuilderFactory(Class<? extends ContentBuilderFactory> c) throws Exception {
+  private ContentBuilderFactory instantiateContentBuilderFactory(
+      Class<? extends ContentBuilderFactory> c) throws Exception {
     // Define the objects we have available that we may want to pass through to constructors
     List<Object> availableParameters = new ArrayList<>();
     availableParameters.add(annotationStoreFactory);
@@ -155,10 +152,11 @@ public class Annot8ComponentService {
     Constructor<ContentBuilderFactory> bestConstructor = null;
     List<Object> bestParameters = Collections.emptyList();
 
-    for(Constructor<ContentBuilderFactory> constructor : (Constructor<ContentBuilderFactory>[]) c.getConstructors()){
+    for (Constructor<ContentBuilderFactory> constructor : (Constructor<ContentBuilderFactory>[]) c
+        .getConstructors()) {
 
       // Special case for no-arg constructor
-      if(constructor.getParameterCount() == 0 && bestConstructor == null) {
+      if (constructor.getParameterCount() == 0 && bestConstructor == null) {
         bestConstructor = constructor;
         bestParameters = Collections.emptyList();
 
@@ -166,31 +164,33 @@ public class Annot8ComponentService {
       }
 
       // If we don't already have a constructor, or this one offers more parameters...
-      if(bestConstructor == null || constructor.getParameterCount() > bestConstructor.getParameterCount()){
+      if (bestConstructor == null
+          || constructor.getParameterCount() > bestConstructor.getParameterCount()) {
         List<Object> parameters = new ArrayList<>();
 
         // Check that we can match all parameters
-        for(Class<?> parameterType : constructor.getParameterTypes()){
+        for (Class<?> parameterType : constructor.getParameterTypes()) {
           boolean matchFound = false;
 
           // Loop through all available parameters and see if we have one of the same class
-          for(Object parameter : availableParameters){
-            if(parameterType.isInstance(parameter)){
-              //Match found, so add it to the list
+          for (Object parameter : availableParameters) {
+            if (parameterType.isInstance(parameter)) {
+              // Match found, so add it to the list
               parameters.add(parameter);
               matchFound = true;
               break;
             }
           }
 
-          if(!matchFound){
+          if (!matchFound) {
             // No match found, so move to the next constructor
             break;
           }
         }
 
-        // If we matched all parameters, then this is our new best (since we already know it has more parameters)
-        if(parameters.size() == constructor.getParameterCount()){
+        // If we matched all parameters, then this is our new best (since we already know it has
+        // more parameters)
+        if (parameters.size() == constructor.getParameterCount()) {
           bestConstructor = constructor;
           bestParameters = parameters;
         }
@@ -198,10 +198,10 @@ public class Annot8ComponentService {
     }
 
     // Now create the ContentBuilderFactory
-    if(bestConstructor == null){
+    if (bestConstructor == null) {
       // We didn't find a match, so through an exception
       throw new NoSuchMethodException("Could not find a suitable constructor");
-    }else{
+    } else {
       LOGGER.debug("Using constructor {} to instantiate class {}", bestConstructor, c.getName());
 
       // Use the best constructor to create the instance
