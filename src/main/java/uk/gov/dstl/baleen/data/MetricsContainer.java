@@ -22,12 +22,10 @@ package uk.gov.dstl.baleen.data;
 
 import io.micrometer.core.instrument.Measurement;
 import io.swagger.v3.oas.annotations.media.Schema;
-
-import javax.json.bind.annotation.JsonbTransient;
+import jakarta.json.bind.annotation.JsonbTransient;
 import java.util.TreeMap;
 
-@Schema(
-    name = "Metrics Container",
+@Schema(name = "Metrics Container",
     description = "Holds all the classes that have metrics associated with them, and their associated measurements")
 public class MetricsContainer extends TreeMap<String, MetricsMeasurements> {
 
@@ -37,14 +35,13 @@ public class MetricsContainer extends TreeMap<String, MetricsMeasurements> {
   }
 
   public void addMeasurement(String clazz, String name, Measurement measurement) {
-    this.computeIfAbsent(clazz, k -> new MetricsMeasurements())
-        .addMeasurement(name, measurement);
+    this.computeIfAbsent(clazz, k -> new MetricsMeasurements()).addMeasurement(name, measurement);
   }
 
   public void addMeasurement(String id, Measurement measurement) {
     String[] idParts = id.split("-", 3);
 
-    //idParts[0] should be empty - it's the prefix, which we set to null
+    // idParts[0] should be empty - it's the prefix, which we set to null
     if (idParts.length == 3) {
       addMeasurement(idParts[1], idParts[2], measurement);
     } else {

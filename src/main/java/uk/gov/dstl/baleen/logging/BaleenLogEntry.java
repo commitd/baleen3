@@ -24,7 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.event.Level;
 import org.slf4j.helpers.FormattingTuple;
 
-import javax.annotation.Nullable;
+import io.micrometer.core.lang.Nullable;
 import java.time.LocalDateTime;
 
 /**
@@ -63,8 +63,7 @@ public class BaleenLogEntry {
     this.throwable = throwable;
   }
 
-  @Schema(
-      description = "Priority level associated with this log message")
+  @Schema(description = "Priority level associated with this log message")
   public Level getLevel() {
     return level;
   }

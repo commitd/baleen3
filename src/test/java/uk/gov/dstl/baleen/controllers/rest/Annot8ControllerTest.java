@@ -20,17 +20,30 @@ package uk.gov.dstl.baleen.controllers.rest;
  * #L%
  */
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import com.fasterxml.classmate.TypeResolver;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.annot8.api.components.ProcessorDescriptor;
-import io.annot8.api.components.SourceDescriptor;
-import io.annot8.implementations.support.registries.Annot8ComponentRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import io.annot8.api.components.ProcessorDescriptor;
+import io.annot8.api.components.SourceDescriptor;
+import io.annot8.implementations.support.registries.Annot8ComponentRegistry;
 import uk.gov.dstl.annot8.TestAnnotationlessProcessor;
 import uk.gov.dstl.annot8.TestProcessor;
 import uk.gov.dstl.annot8.TestSettings;
@@ -41,13 +54,6 @@ import uk.gov.dstl.baleen.data.Annot8ComponentInfo;
 import uk.gov.dstl.baleen.data.SettingsSchema;
 import uk.gov.dstl.baleen.exceptions.ComponentNotFoundException;
 import uk.gov.dstl.baleen.services.Annot8ComponentService;
-
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class Annot8ControllerTest {
 
@@ -64,12 +70,12 @@ public class Annot8ControllerTest {
   ObjectMapper objectMapper;
 
   @BeforeEach
-  public void initMocks(){
+  public void initMocks() {
     MockitoAnnotations.initMocks(this);
   }
 
   @Test
-  public void testGetOrderer(){
+  public void testGetOrderer() {
     when(annot8ComponentService.getOrderers()).thenReturn(Collections.singleton(TestOrderer.class));
 
     Collection<String> orderers = controller.getOrderers();
@@ -78,13 +84,14 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testOrderSources(){
+  public void testOrderSources() {
 
     SourceDescriptor s1 = mock(SourceDescriptor.class, "s1");
     SourceDescriptor s2 = mock(SourceDescriptor.class, "s1");
 
 
-    Collection<SourceDescriptor> orderers = controller.orderSources(TestOrderer.class.getName(), Arrays.asList(s1, s2));
+    Collection<SourceDescriptor> orderers =
+        controller.orderSources(TestOrderer.class.getName(), Arrays.asList(s1, s2));
     assertEquals(2, orderers.size());
     Iterator<SourceDescriptor> iterator = orderers.iterator();
     assertEquals(s2, iterator.next());
@@ -92,13 +99,14 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testOrderProcessors(){
+  public void testOrderProcessors() {
 
     ProcessorDescriptor p1 = mock(ProcessorDescriptor.class, "p1");
     ProcessorDescriptor p2 = mock(ProcessorDescriptor.class, "p1");
 
 
-    Collection<ProcessorDescriptor> orderers = controller.orderProcessors(TestOrderer.class.getName(), Arrays.asList(p1, p2));
+    Collection<ProcessorDescriptor> orderers =
+        controller.orderProcessors(TestOrderer.class.getName(), Arrays.asList(p1, p2));
     assertEquals(2, orderers.size());
     Iterator<ProcessorDescriptor> iterator = orderers.iterator();
     assertEquals(p2, iterator.next());
@@ -106,7 +114,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSources(){
+  public void testGetSources() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -116,7 +124,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSourcesByTag(){
+  public void testGetSourcesByTag() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -126,7 +134,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSourcesByTagNoMatch(){
+  public void testGetSourcesByTagNoMatch() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -135,7 +143,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSource(){
+  public void testGetSource() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -144,7 +152,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSourceBad(){
+  public void testGetSourceBad() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -152,7 +160,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSourceTags(){
+  public void testGetSourceTags() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -165,7 +173,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetProcessors(){
+  public void testGetProcessors() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class));
 
@@ -175,9 +183,10 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetProcessorsByTag(){
+  public void testGetProcessorsByTag() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
-    when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
+    when(annot8ComponentRegistry.getProcessors())
+        .thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
 
     List<Annot8ComponentInfo> processors = controller.getProcessorsByTag("foo,test");
     assertEquals(1, processors.size());
@@ -185,16 +194,17 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetProcessorsByTagNoMatch(){
+  public void testGetProcessorsByTagNoMatch() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
-    when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
+    when(annot8ComponentRegistry.getProcessors())
+        .thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
 
     List<Annot8ComponentInfo> processors = controller.getProcessorsByTag("bar");
     assertEquals(0, processors.size());
   }
 
   @Test
-  public void testGetProcessor(){
+  public void testGetProcessor() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class));
 
@@ -203,7 +213,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetProcessorBad(){
+  public void testGetProcessorBad() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class));
 
@@ -211,9 +221,10 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetProcessorTags(){
+  public void testGetProcessorTags() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
-    when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
+    when(annot8ComponentRegistry.getProcessors())
+        .thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
 
     Map<String, Long> tags = controller.getProcessorTags();
     assertEquals(1, tags.size());
@@ -222,10 +233,11 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetTags(){
+  public void testGetTags() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
-    when(annot8ComponentRegistry.getProcessors()).thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
+    when(annot8ComponentRegistry.getProcessors())
+        .thenReturn(Stream.of(TestProcessor.class, TestAnnotationlessProcessor.class));
 
     Map<String, Long> tags = controller.getTags();
     assertEquals(2, tags.size());
@@ -236,7 +248,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSettings(){
+  public void testGetSettings() {
     when(annot8ComponentService.getRegistry()).thenReturn(annot8ComponentRegistry);
     when(annot8ComponentRegistry.getSources()).thenReturn(Stream.of(TestSource.class));
 
@@ -256,7 +268,7 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSettingsClass(){
+  public void testGetSettingsClass() {
     String s = controller.getSettings(TestSettings.class.getName());
     assertNotNull(s);
     assertTrue(s.contains("\"valueA\":{\"type\":\"string\""));
@@ -264,8 +276,9 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testGetSettingsDefault(){
-    TestSettings viaController = (TestSettings) controller.getSettingsDefault(TestSettings.class.getName());
+  public void testGetSettingsDefault() {
+    TestSettings viaController =
+        (TestSettings) controller.getSettingsDefault(TestSettings.class.getName());
     TestSettings local = new TestSettings();
 
     assertEquals(local.getValueA(), viaController.getValueA());
@@ -273,36 +286,55 @@ public class Annot8ControllerTest {
   }
 
   @Test
-  public void testParser(){
+  public void testParser() {
     TypeResolver typeResolver = new TypeResolver();
 
-    assertEquals(true, Annot8Controller.parseValueAsType(typeResolver.resolve(Boolean.class), "True"));
-    assertEquals(false, Annot8Controller.parseValueAsType(typeResolver.resolve(boolean.class), "False"));
-    assertEquals(false, Annot8Controller.parseValueAsType(typeResolver.resolve(boolean.class), "yes"));
-    assertEquals((short) -100, Annot8Controller.parseValueAsType(typeResolver.resolve(Short.class), "-100"));
-    assertEquals((short) 512, Annot8Controller.parseValueAsType(typeResolver.resolve(short.class), "512"));
-    assertEquals(6322, Annot8Controller.parseValueAsType(typeResolver.resolve(Integer.class), "6322"));
+    assertEquals(true,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Boolean.class), "True"));
+    assertEquals(false,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(boolean.class), "False"));
+    assertEquals(false,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(boolean.class), "yes"));
+    assertEquals((short) -100,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Short.class), "-100"));
+    assertEquals((short) 512,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(short.class), "512"));
+    assertEquals(6322,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Integer.class), "6322"));
     assertEquals(-87, Annot8Controller.parseValueAsType(typeResolver.resolve(int.class), "-87"));
-    assertEquals(234234L, Annot8Controller.parseValueAsType(typeResolver.resolve(Long.class), "234234"));
-    assertEquals(9999L, Annot8Controller.parseValueAsType(typeResolver.resolve(long.class), "9999"));
+    assertEquals(234234L,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Long.class), "234234"));
+    assertEquals(9999L,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(long.class), "9999"));
     assertEquals(0.5f, Annot8Controller.parseValueAsType(typeResolver.resolve(Float.class), "0.5"));
     assertEquals(100f, Annot8Controller.parseValueAsType(typeResolver.resolve(float.class), "100"));
-    assertEquals(-0.07, Annot8Controller.parseValueAsType(typeResolver.resolve(Double.class), "-0.07"));
+    assertEquals(-0.07,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Double.class), "-0.07"));
     assertEquals(-1.0, Annot8Controller.parseValueAsType(typeResolver.resolve(double.class), "-1"));
-    assertEquals((byte) 123, Annot8Controller.parseValueAsType(typeResolver.resolve(Byte.class), "123"));
-    assertEquals((byte) 103, Annot8Controller.parseValueAsType(typeResolver.resolve(byte.class), "103"));
-    assertEquals('a', Annot8Controller.parseValueAsType(typeResolver.resolve(Character.class), "a"));
+    assertEquals((byte) 123,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Byte.class), "123"));
+    assertEquals((byte) 103,
+        Annot8Controller.parseValueAsType(typeResolver.resolve(byte.class), "103"));
+    assertEquals('a',
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Character.class), "a"));
     assertEquals('z', Annot8Controller.parseValueAsType(typeResolver.resolve(char.class), "z"));
 
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(Short.class), "Test"));
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(Integer.class), "Test"));
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(Long.class), "Test"));
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(Float.class), "Test"));
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(Double.class), "Test"));
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(Byte.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Short.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Integer.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Long.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Float.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Double.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(Byte.class), "Test"));
     assertEquals("", Annot8Controller.parseValueAsType(typeResolver.resolve(Character.class), ""));
 
-    assertEquals("Test", Annot8Controller.parseValueAsType(typeResolver.resolve(String.class), "Test"));
+    assertEquals("Test",
+        Annot8Controller.parseValueAsType(typeResolver.resolve(String.class), "Test"));
 
   }
 }

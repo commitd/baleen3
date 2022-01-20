@@ -63,6 +63,9 @@
     <node.version>v12.22.1</node.version>
     <typescript-generator-maven-plugin.version>2.32.889</typescript-generator-maven-plugin.version>
     <yarn.version>v1.22.5</yarn.version>
+
+    <jakarta-json.version>2.0.0</jakarta-json.version>
+    <jakarta-json-bind.version>2.0.0</jakarta-json-bind.version>
   </properties>
 
   <dependencies>
@@ -88,7 +91,7 @@
     <dependency>
       <groupId>org.eclipse</groupId>
       <artifactId>yasson</artifactId>
-      <version>2.0.2</version>
+      <version>2.0.4</version>
     </dependency>
 
     <!-- Annot8 -->
@@ -239,6 +242,7 @@
           <optionalAnnotations>
             <annotation>javax.annotation.Nullable</annotation>
             <annotation>io.micrometer.core.lang.Nullable</annotation>
+            <annotation>jakarta.json.bind.annotation.JsonbTransient</annotation>
           </optionalAnnotations>
           <optionalPropertiesDeclaration>questionMark</optionalPropertiesDeclaration>
           <classPatterns>

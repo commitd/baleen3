@@ -25,8 +25,8 @@ import io.annot8.api.components.SourceDescriptor;
 import io.annot8.api.pipelines.ErrorConfiguration;
 import io.annot8.api.pipelines.PipelineDescriptor;
 
-import javax.annotation.Nullable;
-import javax.json.bind.annotation.JsonbCreator;
+import io.micrometer.core.lang.Nullable;
+import jakarta.json.bind.annotation.JsonbCreator;
 import java.util.Collection;
 
 /**
@@ -73,7 +73,8 @@ public class PipelineTemplate implements PipelineDescriptor {
   private final Collection<ProcessorDescriptor> processors;
 
   @JsonbCreator
-  public PipelineTemplate(String name, Collection<SourceDescriptor> sources, Collection<ProcessorDescriptor> processors) {
+  public PipelineTemplate(String name, Collection<SourceDescriptor> sources,
+      Collection<ProcessorDescriptor> processors) {
     this.name = name;
     this.sources = sources;
     this.processors = processors;

@@ -20,36 +20,6 @@ package uk.gov.dstl.baleen.services;
  * #L%
  */
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.annot8.api.context.Context;
-import io.annot8.api.data.ItemFactory;
-import io.annot8.api.pipelines.ErrorConfiguration;
-import io.annot8.api.pipelines.PipelineDescriptor;
-import io.annot8.api.pipelines.PipelineRunner;
-import io.annot8.common.components.logging.Logging;
-import io.annot8.common.components.metering.Metering;
-import io.annot8.implementations.pipeline.InMemoryPipelineRunner;
-import io.annot8.implementations.reference.factories.DefaultItemFactory;
-import io.annot8.implementations.support.context.SimpleContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import uk.gov.dstl.annot8.baleen.MutablePipelineDescriptor;
-import uk.gov.dstl.annot8.baleen.RestApi;
-import uk.gov.dstl.annot8.baleen.RestApiQueue;
-import uk.gov.dstl.annot8.baleen.SubmittedData;
-import uk.gov.dstl.baleen.data.PipelineHolder;
-import uk.gov.dstl.baleen.data.PipelineMetadata;
-import uk.gov.dstl.baleen.exceptions.AlreadyExistsException;
-import uk.gov.dstl.baleen.exceptions.BadRequestException;
-import uk.gov.dstl.baleen.exceptions.PipelineNotFoundException;
-import uk.gov.dstl.baleen.logging.BaleenLoggerFactory;
-
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -72,6 +42,36 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import io.annot8.api.context.Context;
+import io.annot8.api.data.ItemFactory;
+import io.annot8.api.pipelines.ErrorConfiguration;
+import io.annot8.api.pipelines.PipelineDescriptor;
+import io.annot8.api.pipelines.PipelineRunner;
+import io.annot8.common.components.logging.Logging;
+import io.annot8.common.components.metering.Metering;
+import io.annot8.implementations.pipeline.InMemoryPipelineRunner;
+import io.annot8.implementations.reference.factories.DefaultItemFactory;
+import io.annot8.implementations.support.context.SimpleContext;
+import uk.gov.dstl.annot8.baleen.MutablePipelineDescriptor;
+import uk.gov.dstl.annot8.baleen.RestApi;
+import uk.gov.dstl.annot8.baleen.RestApiQueue;
+import uk.gov.dstl.annot8.baleen.SubmittedData;
+import uk.gov.dstl.baleen.data.PipelineHolder;
+import uk.gov.dstl.baleen.data.PipelineMetadata;
+import uk.gov.dstl.baleen.exceptions.AlreadyExistsException;
+import uk.gov.dstl.baleen.exceptions.BadRequestException;
+import uk.gov.dstl.baleen.exceptions.PipelineNotFoundException;
+import uk.gov.dstl.baleen.logging.BaleenLoggerFactory;
 
 /**
  * Service for creating and managing Baleen 3 pipelines
@@ -104,24 +104,26 @@ public class PipelineService {
   private final Map<String, RestApiQueue> queues = new HashMap<>();
   private final Map<String, File> persistedPipelines = new HashMap<>();
 
-  public PipelineService(){
+  public PipelineService() {
     try {
       watchService = FileSystems.getDefault().newWatchService();
     } catch (IOException e) {
-      LOGGER.warn("Unable to create WatchService - files added/removed to the persistence folder will not be detected", e);
+      LOGGER.warn(
+          "Unable to create WatchService - files added/removed to the persistence folder will not be detected",
+          e);
     }
   }
 
   /**
-   * Reads in pipelines from the folder defined in {@link #persistenceFolder}, and creates
-   * these pipelines.
+   * Reads in pipelines from the folder defined in {@link #persistenceFolder}, and creates these
+   * pipelines.
    *
-   * This method should not throw any exceptions, but will log WARNING messages if there are
-   * errors creating the persisted pipelines
+   * This method should not throw any exceptions, but will log WARNING messages if there are errors
+   * creating the persisted pipelines
    */
   @PostConstruct
   public void startPersistedPipelines() {
-    //Check the persistence folder exists, and if it doesn't try to create it
+    // Check the persistence folder exists, and if it doesn't try to create it
     if (!persistenceFolder.exists()) {
       LOGGER.info("Creating persistence folder {}", persistenceFolder);
       if (!persistenceFolder.mkdirs()) {
@@ -130,7 +132,7 @@ public class PipelineService {
       }
     }
 
-    //Check that the persistence folder is a directory that we can read and write
+    // Check that the persistence folder is a directory that we can read and write
     if (!persistenceFolder.isDirectory()) {
       LOGGER.warn("Persistence folder {} is not a directory", persistenceFolder);
       return;
@@ -141,47 +143,59 @@ public class PipelineService {
       return;
     }
 
-    if(watchService != null){
+    if (watchService != null) {
       try {
-        //Don't need to watch CREATE, as MODIFY is also called when a file is created
-        persistenceFolder.toPath().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
+        // Don't need to watch CREATE, as MODIFY is also called when a file is created
+        persistenceFolder.toPath().register(watchService, StandardWatchEventKinds.ENTRY_MODIFY,
+            StandardWatchEventKinds.ENTRY_DELETE);
       } catch (IOException e) {
-        LOGGER.warn("Unable to create WatchKey - files added/removed to the persistence folder will not be detected", e);
+        LOGGER.warn(
+            "Unable to create WatchKey - files added/removed to the persistence folder will not be detected",
+            e);
       }
     }
 
     if (!persistenceFolder.canWrite()) {
-      LOGGER.warn("Can not write to persistence folder {} - existing pipelines will be created but new pipelines will not be persisted", persistenceFolder);
+      LOGGER.warn(
+          "Can not write to persistence folder {} - existing pipelines will be created but new pipelines will not be persisted",
+          persistenceFolder);
     }
 
     File[] files = persistenceFolder.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
-    if(files == null){
+    if (files == null) {
       LOGGER.warn("Can not retrieve JSON files from persistence folder {}", persistenceFolder);
       return;
     }
 
-    //Loop through all JSON files in the persistence folder
+    // Loop through all JSON files in the persistence folder
     for (File f : files) {
       LOGGER.info("Recreating persisted pipeline from file {}", f);
       createPipelineFromFile(f);
     }
   }
 
-  private boolean createPipelineFromFile(File f){
-    //Read configuration from JSON file
+  private boolean createPipelineFromFile(File f) {
+    // Read configuration from JSON file
     PipelineDescriptor configuration;
-    try (FileReader reader = new FileReader(f)){
-      configuration = objectMapper.readValue(reader, MutablePipelineDescriptor.class);  //Use our own internal descriptor which has getters and setters
+    try (FileReader reader = new FileReader(f)) {
+      configuration = objectMapper.readValue(reader, MutablePipelineDescriptor.class); // Use our
+                                                                                       // own
+                                                                                       // internal
+                                                                                       // descriptor
+                                                                                       // which has
+                                                                                       // getters
+                                                                                       // and
+                                                                                       // setters
     } catch (Exception e) {
       LOGGER.error("Unable to parse file {}", f, e);
       return false;
     }
 
-    //Create new pipeline from configuration
+    // Create new pipeline from configuration
     try {
       createPipeline(configuration);
       persistedPipelines.put(configuration.getName(), f.getCanonicalFile());
-    }catch (Exception e){
+    } catch (Exception e) {
       LOGGER.error("Unable to create pipeline {} from file {}", configuration.getName(), f, e);
       return false;
     }
@@ -190,43 +204,45 @@ public class PipelineService {
   }
 
   @Scheduled(fixedDelay = 5000)
-  public void detectChanges(){
-    if(watchService == null)
+  public void detectChanges() {
+    if (watchService == null)
       return;
 
     LOGGER.debug("Checking persistence folder for changes");
 
     WatchKey key;
-    while((key = watchService.poll()) != null){
+    while ((key = watchService.poll()) != null) {
       for (WatchEvent<?> event : key.pollEvents()) {
 
-        //We're watching ENTRY_MODIFY and ENTRY_DELETE, so context is always a Path
+        // We're watching ENTRY_MODIFY and ENTRY_DELETE, so context is always a Path
         Path path = (Path) event.context();
 
-        if(!path.toString().toLowerCase().endsWith(".json"))
+        if (!path.toString().toLowerCase().endsWith(".json"))
           continue;
 
         LOGGER.info("{} event detected on path {}", event.kind(), path);
         File f = new File(persistenceFolder, path.getFileName().toString());
 
-        if(StandardWatchEventKinds.ENTRY_MODIFY.equals(event.kind())){
+        if (StandardWatchEventKinds.ENTRY_MODIFY.equals(event.kind())) {
           String pipelineName = getPipelineName(f);
 
-          if(pipelineName != null && pipelines.containsKey(pipelineName)) {
-            LOGGER.info("Stopping existing pipeline {} for modified file {}", pipelineName, f.getName());
+          if (pipelineName != null && pipelines.containsKey(pipelineName)) {
+            LOGGER.info("Stopping existing pipeline {} for modified file {}", pipelineName,
+                f.getName());
             stopPipeline(pipelineName);
           }
 
           LOGGER.info("Creating pipeline for file {}", f.getName());
           createPipelineFromFile(f);
-        }else if(StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())){
+        } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(event.kind())) {
           String pipelineName = getPipelineName(f);
-          if(pipelineName == null) {
+          if (pipelineName == null) {
             LOGGER.info("Could not determine pipeline name for file {}", f.getName());
             continue;
           }
 
-          LOGGER.info("Stopping pipeline {} as persisted file {} was deleted", pipelineName, f.getName());
+          LOGGER.info("Stopping pipeline {} as persisted file {} was deleted", pipelineName,
+              f.getName());
           persistedPipelines.remove(pipelineName);
           stopPipeline(pipelineName);
         }
@@ -236,9 +252,9 @@ public class PipelineService {
     }
   }
 
-  private String getPipelineName(File f){
-    for(Map.Entry<String, File> e : persistedPipelines.entrySet()){
-      //Check names are equal - we're already assuming they're the same folder
+  private String getPipelineName(File f) {
+    for (Map.Entry<String, File> e : persistedPipelines.entrySet()) {
+      // Check names are equal - we're already assuming they're the same folder
       if (e.getValue().getName().equals(f.getName()))
         return e.getKey();
     }
@@ -249,23 +265,24 @@ public class PipelineService {
   /**
    * Create a new pipeline from a {@link PipelineDescriptor}
    */
-  public void createPipeline(PipelineDescriptor descriptor){
-    //Check we don't already have a pipeline with the same name
-    if(pipelines.containsKey(descriptor.getName())){
-      throw new AlreadyExistsException("Pipeline '"+descriptor.getName()+"' already exists");
+  public void createPipeline(PipelineDescriptor descriptor) {
+    // Check we don't already have a pipeline with the same name
+    if (pipelines.containsKey(descriptor.getName())) {
+      throw new AlreadyExistsException("Pipeline '" + descriptor.getName() + "' already exists");
     }
 
     LOGGER.info("Creating pipeline {}", descriptor.getName());
 
-    //Create a wrapper object for the pipeline
+    // Create a wrapper object for the pipeline
     PipelineHolder holder = new PipelineHolder(descriptor, loggingMax);
 
-    //Save reference to pipeline for future use
+    // Save reference to pipeline for future use
     pipelines.put(descriptor.getName(), holder);
 
-    //Start pipeline
-    if(getPipelineState().contains(descriptor.getName())) {
-      LOGGER.info("Pipeline {} was previously in stopped state, and will not be started", descriptor.getName());
+    // Start pipeline
+    if (getPipelineState().contains(descriptor.getName())) {
+      LOGGER.info("Pipeline {} was previously in stopped state, and will not be started",
+          descriptor.getName());
       return;
     }
 
@@ -275,7 +292,7 @@ public class PipelineService {
   /**
    * Return the current list of pipelines (sorted by pipeline name)
    */
-  public Set<String> getPipelineNames(){
+  public Set<String> getPipelineNames() {
     return new TreeSet<>(pipelines.keySet());
   }
 
@@ -284,14 +301,16 @@ public class PipelineService {
    * @return list of the current pipelines metadata (sorted by pipeline name)
    */
   public List<PipelineMetadata> getPipelinesMetadata() {
-    return pipelines.values().stream().map(PipelineMetadata::new).sorted(Comparator.comparing(PipelineMetadata::getName)).collect(Collectors.toList());
+    return pipelines.values().stream().map(PipelineMetadata::new)
+        .sorted(Comparator.comparing(PipelineMetadata::getName)).collect(Collectors.toList());
   }
 
   /**
-   * Return a specific pipeline, or throw a {@link PipelineNotFoundException} if the pipeline doesn't exist
+   * Return a specific pipeline, or throw a {@link PipelineNotFoundException} if the pipeline
+   * doesn't exist
    */
-  public PipelineHolder getPipeline(String pipelineName){
-    if(!pipelines.containsKey(pipelineName)){
+  public PipelineHolder getPipeline(String pipelineName) {
+    if (!pipelines.containsKey(pipelineName)) {
       throw new PipelineNotFoundException();
     }
 
@@ -299,37 +318,39 @@ public class PipelineService {
   }
 
   /**
-   * Starts a pipeline, if it doesn't already have a runner associated with it
-   * Throws a {@link PipelineNotFoundException} if the pipeline doesn't exist.
+   * Starts a pipeline, if it doesn't already have a runner associated with it Throws a
+   * {@link PipelineNotFoundException} if the pipeline doesn't exist.
    */
-  public void startPipeline(String pipelineName){
-    //Check the pipeline exists
-    if(!pipelines.containsKey(pipelineName)){
+  public void startPipeline(String pipelineName) {
+    // Check the pipeline exists
+    if (!pipelines.containsKey(pipelineName)) {
       throw new PipelineNotFoundException();
     }
 
     PipelineHolder holder = pipelines.get(pipelineName);
 
-    if(holder.isRunning())
+    if (holder.isRunning())
       return;
 
     LOGGER.info("Starting pipeline {}", pipelineName);
 
     PipelineDescriptor descriptor = holder.getDescriptor();
 
-    //Create factories and resources (including a RestApiQueue if required), and add these to the context
+    // Create factories and resources (including a RestApiQueue if required), and add these to the
+    // context
     LOGGER.debug("Creating resources and context for pipeline {}", descriptor.getName());
 
-    ItemFactory itemFactory = new DefaultItemFactory(annot8ComponentService.getContentBuilderFactoryRegistry());
+    ItemFactory itemFactory =
+        new DefaultItemFactory(annot8ComponentService.getContentBuilderFactoryRegistry());
     Logging logging = Logging.useILoggerFactory(new BaleenLoggerFactory(holder.getLogEntries()));
     Metering metering = Metering.useMeterRegistry(holder.getMeterRegistry(), null);
 
     Context context;
-    if(descriptor.getSources().stream().anyMatch(sd -> sd instanceof RestApi)){
+    if (descriptor.getSources().stream().anyMatch(sd -> sd instanceof RestApi)) {
       RestApiQueue resource = new RestApiQueue();
       queues.put(descriptor.getName(), resource);
       context = new SimpleContext(logging, metering, resource);
-    }else{
+    } else {
       context = new SimpleContext(logging, metering);
     }
 
@@ -337,25 +358,24 @@ public class PipelineService {
 
     ErrorConfiguration errorConfiguration = descriptor.getErrorConfiguration();
 
-    if(errorConfiguration == null){
+    if (errorConfiguration == null) {
       errorConfiguration = new ErrorConfiguration();
     }
 
     // Print information about error configuration
-    LOGGER.info("Error configuration for pipeline {} on source errors is {}", descriptor.getName(), errorConfiguration.getOnSourceError());
-    LOGGER.info("Error configuration for pipeline {} on processing errors is {}", descriptor.getName(), errorConfiguration.getOnProcessorError());
-    LOGGER.info("Error configuration for pipeline {} on item errors is {}", descriptor.getName(), errorConfiguration.getOnItemError());
+    LOGGER.info("Error configuration for pipeline {} on source errors is {}", descriptor.getName(),
+        errorConfiguration.getOnSourceError());
+    LOGGER.info("Error configuration for pipeline {} on processing errors is {}",
+        descriptor.getName(), errorConfiguration.getOnProcessorError());
+    LOGGER.info("Error configuration for pipeline {} on item errors is {}", descriptor.getName(),
+        errorConfiguration.getOnItemError());
 
-    //Create runner and start it running on a new thread
+    // Create runner and start it running on a new thread
     LOGGER.debug("Creating runner for pipeline {}", descriptor.getName());
 
-    PipelineRunner runner = new InMemoryPipelineRunner.Builder()
-      .withPipelineDescriptor(descriptor)
-      .withItemFactory(itemFactory)
-      .withContext(context)
-      .withDelay(pipelineDelay)
-      .withErrorConfiguration(errorConfiguration)
-      .build();
+    PipelineRunner runner = new InMemoryPipelineRunner.Builder().withPipelineDescriptor(descriptor)
+        .withItemFactory(itemFactory).withContext(context).withDelay(pipelineDelay)
+        .withErrorConfiguration(errorConfiguration).build();
 
     holder.setPipelineRunner(runner);
 
@@ -368,23 +388,23 @@ public class PipelineService {
   }
 
   /**
-   * Stops a pipeline, without removing the persisted JSON file.
-   * Throws a {@link PipelineNotFoundException} if the pipeline doesn't exist.
+   * Stops a pipeline, without removing the persisted JSON file. Throws a
+   * {@link PipelineNotFoundException} if the pipeline doesn't exist.
    */
-  public void stopPipeline(String pipelineName){
-    //Check the pipeline exists
-    if(!pipelines.containsKey(pipelineName)){
+  public void stopPipeline(String pipelineName) {
+    // Check the pipeline exists
+    if (!pipelines.containsKey(pipelineName)) {
       throw new PipelineNotFoundException();
     }
 
-    //Get the pipeline and check it is running
+    // Get the pipeline and check it is running
     PipelineHolder holder = pipelines.get(pipelineName);
-    if(!holder.isRunning())
+    if (!holder.isRunning())
       return;
 
     LOGGER.info("Stopping pipeline {}", pipelineName);
 
-    //Stop the thread running
+    // Stop the thread running
     holder.getPipelineRunner().stop();
     holder.setPipelineRunner(null);
 
@@ -401,21 +421,22 @@ public class PipelineService {
   }
 
   /**
-   * Deletes a pipeline, including removing the persisted JSON file if present.
-   * Throws a {@link PipelineNotFoundException} if the pipeline doesn't exist.
+   * Deletes a pipeline, including removing the persisted JSON file if present. Throws a
+   * {@link PipelineNotFoundException} if the pipeline doesn't exist.
    */
-  public void deletePipeline(String pipelineName){
+  public void deletePipeline(String pipelineName) {
     LOGGER.info("Deleting pipeline {}", pipelineName);
 
-    //Stop pipeline and remove it from service
+    // Stop pipeline and remove it from service
     stopPipeline(pipelineName);
     pipelines.remove(pipelineName);
 
-    //Remove the persisted pipeline, if it exists
-    if(persistedPipelines.containsKey(pipelineName)) {
+    // Remove the persisted pipeline, if it exists
+    if (persistedPipelines.containsKey(pipelineName)) {
       boolean deleted = persistedPipelines.remove(pipelineName).delete();
-      if(!deleted)
-        LOGGER.warn("Failed to delete persisted file for {} - file may have already been deleted", pipelineName);
+      if (!deleted)
+        LOGGER.warn("Failed to delete persisted file for {} - file may have already been deleted",
+            pipelineName);
     }
 
     LOGGER.info("Pipeline {} deleted", pipelineName);
@@ -425,41 +446,43 @@ public class PipelineService {
   /**
    * Returns true if a pipeline exists, and false otherwise
    */
-  public boolean pipelineExists(String pipelineName){
+  public boolean pipelineExists(String pipelineName) {
     return pipelines.containsKey(pipelineName);
   }
 
   /**
    * Persists a pipeline as a JSON file to the folder specified in {@link #persistenceFolder}.
    *
-   * Returns true if the pipeline was saved, and false otherwise.
-   * If the method fails to persist the pipeline, then errors will be logged.
+   * Returns true if the pipeline was saved, and false otherwise. If the method fails to persist the
+   * pipeline, then errors will be logged.
    */
   public boolean save(PipelineDescriptor descriptor) {
-    //Check the persistence folder exists and that we can write to it
+    // Check the persistence folder exists and that we can write to it
     if (!persistenceFolder.exists()) {
       LOGGER.info("Creating persistence folder {}", persistenceFolder);
       if (!persistenceFolder.mkdirs()) {
-        LOGGER.error("Unable to create persistence folder {} - pipeline {} will not be persisted", persistenceFolder, descriptor.getName());
+        LOGGER.error("Unable to create persistence folder {} - pipeline {} will not be persisted",
+            persistenceFolder, descriptor.getName());
         return false;
       }
     }
 
     if (!persistenceFolder.canWrite()) {
-      LOGGER.error("Can not write to persistence folder {} - pipeline {} will not be persisted", persistenceFolder, descriptor.getName());
+      LOGGER.error("Can not write to persistence folder {} - pipeline {} will not be persisted",
+          persistenceFolder, descriptor.getName());
       return false;
     }
 
-    //Create the JSON from the descriptor
+    // Create the JSON from the descriptor
     String json;
     try {
       json = objectMapper.writeValueAsString(descriptor);
-    }catch (JsonProcessingException e){
+    } catch (JsonProcessingException e) {
       LOGGER.error("Could not serialize pipeline", e);
       return false;
     }
 
-    //Save the JSON to a folder, with a random UUID to avoid filename clashes
+    // Save the JSON to a folder, with a random UUID to avoid filename clashes
     LOGGER.info("Persisting pipeline {}", descriptor.getName());
 
     try {
@@ -468,9 +491,9 @@ public class PipelineService {
 
       LOGGER.info("Pipeline {} persisted to {}", descriptor.getName(), f.getPath());
 
-      //Save link to the file
+      // Save link to the file
       persistedPipelines.put(descriptor.getName(), f.getCanonicalFile());
-    }catch (IOException ioe){
+    } catch (IOException ioe) {
       LOGGER.error("Can not persist pipeline {}", descriptor.getName());
       return false;
     }
@@ -481,15 +504,15 @@ public class PipelineService {
   /**
    * Add data to the processing queue for pipelines that support the REST API
    */
-  public void submitData(String pipelineName, SubmittedData data){
-    //Check the pipeline exists, and that it has a queue
-    if(!pipelines.containsKey(pipelineName))
+  public void submitData(String pipelineName, SubmittedData data) {
+    // Check the pipeline exists, and that it has a queue
+    if (!pipelines.containsKey(pipelineName))
       throw new PipelineNotFoundException();
 
-    if(!queues.containsKey(pipelineName))
+    if (!queues.containsKey(pipelineName))
       throw new BadRequestException("Pipeline is not configured to support REST API");
 
-    //Add data to queue
+    // Add data to queue
     LOGGER.debug("Data received via REST API for pipeline {}", pipelineName);
     queues.get(pipelineName).addToQueue(data);
   }
@@ -497,7 +520,7 @@ public class PipelineService {
   /**
    * Returns list of stopped pipelines from the stoppedState file
    */
-  private List<String> getPipelineState(){
+  private List<String> getPipelineState() {
     try {
       return Files.readAllLines(stoppedState.toPath());
     } catch (FileNotFoundException fnfe) {
@@ -511,14 +534,13 @@ public class PipelineService {
   /**
    * Saves current list of stopped pipelines to the stoppedState file
    */
-  private void updatePipelineState(){
+  private void updatePipelineState() {
     List<String> stoppedPipelines = pipelines.entrySet().stream()
-      .filter(e -> !e.getValue().isRunning())
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toList());
+        .filter(e -> !e.getValue().isRunning()).map(Map.Entry::getKey).collect(Collectors.toList());
 
     try {
-      Files.write(stoppedState.toPath(), stoppedPipelines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+      Files.write(stoppedState.toPath(), stoppedPipelines, StandardOpenOption.CREATE,
+          StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
     } catch (IOException e) {
       LOGGER.error("Unable to persist pipeline state to disk", e);
     }
